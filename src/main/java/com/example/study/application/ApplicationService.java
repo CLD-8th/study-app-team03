@@ -160,7 +160,15 @@ public class ApplicationService {
      * 반환형태    List<ApplicationResponse>
      * 동작결과    EP-17 · 상세 화면의 신청 구획도 이 값을 씀
      */
-        throw new UnsupportedOperationException("TODO 64");
+        List<Application> applications = applicationRepository.findApplicationByApplicant(memberId);
+
+        if(applications.isEmpty()){
+            throw new BusinessException(ErrorCode.NOT_FOUND, "신청한 모집 글이 존재하지 않습니다.");
+        }
+
+        return applications.stream()
+                .map(ApplicationResponse::from)
+                .toList();
     }
 
     /**

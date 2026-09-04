@@ -59,4 +59,20 @@ public class MemberController {
      * 반환형태    MemberResponse · List<StudyListResponse> · List<ApplicationResponse>
      * 동작결과    EP-15 · EP-16 · EP-17 · 토큰이 없으면 401 UNAUTHORIZED
      */
+
+    @GetMapping("/me")
+    public MemberResponse findMe(Long memberId) {
+        return memberService.findById(memberId);
+    }
+
+    @GetMapping("/me/studies")
+    public List<StudyListResponse> findMyStudies(Long memberId) {
+        return studyService.findMine(memberId);
+    }
+
+    @GetMapping("/me/applications")
+    public List<ApplicationResponse> findMyApplications(Long memberId) {
+        return applicationService.findMine(memberId);
+    }
+
 }

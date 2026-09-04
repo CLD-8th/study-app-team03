@@ -17,6 +17,11 @@ async function loadProfile() {
      *             조각은 parts.html 의 "마이페이지 내 정보"
      * 동작결과    EP-15 · 토큰이 없으면 로그인 화면으로 보내짐
      */
+    try {
+
+    } catch (error) {
+        window.location
+    }
 }
 
 async function loadMyStudies() {
