@@ -125,7 +125,24 @@ public class StudyService {
      * 동작결과    EP-04 · 남의 글 403 FORBIDDEN · 마감된 글 400 STUDY_CLOSED
      *             정원 축소 400 CAPACITY_BELOW_ACCEPTED
      */
-        throw new UnsupportedOperationException("TODO 23");
+        StudyPost studyPost = getWithWriter(id);
+
+        if (!studyPost.isWrittenBy(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "모집자만 수정 가능");
+        }
+        if (!studyPost.isRecruiting()) {
+            throw new BusinessException(ErrorCode.STUDY_CLOSED, "마감된 모집글은 수정 불가");
+        }
+
+        long acceptedCount = countAccepted(studyPost.getId());
+        if (capacity < acceptedCount) {
+            throw new BusinessException(
+                    ErrorCode.CAPACITY_BELOW_ACCEPTED,
+                    "정원은 현재 수락 인원 " + acceptedCount + "명보다 작을 수 없음");
+        }
+
+        studyPost.update(title, content, capacity, deadline);
+        return StudyDetailResponse.of(studyPost, acceptedCount);
     }
 
     @Transactional
@@ -140,7 +157,13 @@ public class StudyService {
      * 반환형태    없음
      * 동작결과    EP-05 · 204 · 남의 글은 403 FORBIDDEN
      */
-        throw new UnsupportedOperationException("TODO 24");
+        StudyPost studyPost = getWithWriter(id);
+
+        if (!studyPost.isWrittenBy(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "모집자만 삭제 가능");
+        }
+
+        studyPostRepository.delete(studyPost);
     }
 
     /**
@@ -162,7 +185,17 @@ public class StudyService {
      * 반환형태    StudyDetailResponse
      * 동작결과    EP-06 · 상태가 CLOSED · 이미 마감이면 400 STUDY_CLOSED
      */
-        throw new UnsupportedOperationException("TODO 25");
+        StudyPost studyPost = getWithWriter(id);
+
+        if (!studyPost.isWrittenBy(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "모집자만 마감 가능");
+        }
+        if (!studyPost.isRecruiting()) {
+            throw new BusinessException(ErrorCode.STUDY_CLOSED, "이미 마감된 모집글");
+        }
+
+        studyPost.close();
+        return StudyDetailResponse.of(studyPost, countAccepted(studyPost.getId()));
     }
 
     public List<StudyListResponse> findMine(Long memberId) {
