@@ -138,7 +138,16 @@ public class ApplicationService {
      * 반환형태    List<ApplicationResponse>
      * 동작결과    EP-09 · 모집자는 200 · 남이면 403 FORBIDDEN
      */
-        throw new UnsupportedOperationException("TODO 42");
+        StudyPost studyPost = studyService.getWithWriter(studyPostId);
+
+        if (!studyPost.isWrittenBy(memberId) ){
+            throw new BusinessException(ErrorCode.FORBIDDEN, "권한 부재");
+        }
+
+        return applicationRepository.findWithApplicantByStudyPostIdOrderByCreatedAtAsc(studyPostId)
+                .stream()
+                .map(ApplicationResponse::from)
+                .toList();
     }
 
     public List<ApplicationResponse> findMine(Long memberId) {
@@ -176,7 +185,21 @@ public class ApplicationService {
      * 동작결과    EP-10 · 상태가 ACCEPTED · 정원이 차면 400 CAPACITY_EXCEEDED
      *             마지막 자리를 채우면 모집글 상태가 CLOSED
      */
-        throw new UnsupportedOperationException("TODO 43");
+        Application application = processable(applicationId, memberId);
+        long count = applicationRepository.countByStudyPostIdAndStatus(application.getStudyPost().getId(),ApplicationStatus.PENDING);
+
+        if (count <= 0) {
+            throw new BusinessException(ErrorCode.CAPACITY_EXCEEDED, "정원 초과");
+        }
+
+        if (count == 1) {
+            application.getStudyPost().close();
+        }
+
+        application.accept();
+
+        return ApplicationResponse.from(application);
+
     }
 
     /**
@@ -196,7 +219,9 @@ public class ApplicationService {
      * 반환형태    ApplicationResponse
      * 동작결과    EP-11 · 상태가 REJECTED · 처리된 건은 400 ALREADY_PROCESSED
      */
-        throw new UnsupportedOperationException("TODO 44");
+        Application application = processable(applicationId, memberId);
+        application.reject();
+        return ApplicationResponse.from(application);
     }
 
     private Application processable(Long applicationId, Long memberId) {
@@ -211,7 +236,17 @@ public class ApplicationService {
      * 반환형태    Application
      * 동작결과    남의 글 403 · 처리된 건 400 ALREADY_PROCESSED
      */
-        throw new UnsupportedOperationException("TODO 45");
+        Application application = getWithStudyPost(applicationId);
+
+        if (application.getStudyPost().isWrittenBy(memberId)) {
+            throw new BusinessException(ErrorCode.SELF_APPLICATION, "자기 모집글");
+        }
+
+        if (!application.isPending()) {
+            throw new BusinessException(ErrorCode.STUDY_CLOSED, "마감된 모집글");
+        }
+
+        return application;
     }
 
     private Application getWithStudyPost(Long id) {
