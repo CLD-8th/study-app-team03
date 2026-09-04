@@ -51,7 +51,11 @@ public class StudyService {
      * 반환형태    StudyDetailResponse · TODO.md 응답 형태 참고
      * 동작결과    EP-03 · 201 과 Location 머리 · 상태는 RECRUITING
      */
-        throw new UnsupportedOperationException("TODO 21");
+        Member writer = memberService.getMember(memberId);
+        StudyPost saved = studyPostRepository.save(
+                new StudyPost(title, content, capacity, deadline, writer));
+
+        return StudyDetailResponse.of(saved, 0);
     }
 
     /**
@@ -87,7 +91,10 @@ public class StudyService {
      * 반환형태    StudyDetailResponse
      * 동작결과    EP-02 · 200 과 상세 · 없는 번호는 404 NOT_FOUND
      */
-        throw new UnsupportedOperationException("TODO 22");
+        StudyPost studyPost = getWithWriter(id);
+        long acceptedCount = countAccepted(studyPost.getId());
+
+        return StudyDetailResponse.of(studyPost, acceptedCount);
     }
 
     /**
