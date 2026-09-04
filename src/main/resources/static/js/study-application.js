@@ -21,6 +21,54 @@ StudyPage.register(async function renderApplications() {
      *             조각은 parts.html 의 "신청 목록"
      * 동작결과    남의 글에서는 구획이 보이지 않음 · 신청이 없으면 빈 화면 문구
      */
+    const study = StudyPage.study;
+    const panel = document.getElementById('application-panel');
+    if (!StudyPage.isOwner()) {
+        panel.classList.add('hidden');
+        panel.innerHTML = '';
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<div class="card-head"><div class="card-title">신청 목록</div></div>' +
+        '<div class="alert alert-error hidden" id="process-error"></div>';
+
+    try {
+        const applications = await api.get('/api/studies/' + StudyPage.id + '/applications');
+        const isFull = study.acceptedCount >= study.capacity;
+
+        panel.innerHTML = `
+            <div class="card-head">
+                <div class="card-title">신청 목록</div>
+                <span class="card-count">${applications.length}건</span>
+            </div>
+            ${applications.length === 0 ? '<div class="empty">신청 내역이 없습니다</div>' :
+                applications.map((application, index) => `
+                    <div class="item">
+                        <div>
+                            <div class="item-title">${escapeHtml(application.applicantNickname)} ${badge(escapeHtml(application.status))}</div>
+                            <div class="item-meta"><span>${escapeHtml(application.message)}</span></div>
+                        </div>
+                        ${application.status === 'PENDING' ? `
+                            <div class="actions">
+                                <button class="primary" data-index="${index}" data-action="accept" ${isFull ? 'disabled' : ''}>수락</button>
+                                <button data-index="${index}" data-action="reject">거절</button>
+                            </div>` : `<span class="item-meta">${escapeHtml(shortDate(application.createdAt))}</span>`}
+                    </div>
+                `).join('')}
+            ${isFull ? '<div class="alert alert-error">정원이 찼습니다. 더 수락할 수 없습니다</div>' : ''}
+            <div class="alert alert-error hidden" id="process-error"></div>
+        `;
+
+        panel.querySelectorAll('button[data-action]').forEach(button => {
+            button.addEventListener('click', () => {
+                const application = applications[Number(button.dataset.index)];
+                processApplication(application.id, button.dataset.action);
+            });
+        });
+    } catch (error) {
+        showError(document.getElementById('process-error'), error);
+    }
 });
 
 async function processApplication(applicationId, action) {
@@ -40,4 +88,14 @@ async function processApplication(applicationId, action) {
      * 동작결과    마지막 자리를 수락하면 상세의 배지가 마감으로 바뀜
      *             정원이 찬 뒤 수락하면 400 CAPACITY_EXCEEDED
      */
+    const errorBox = document.getElementById('process-error');
+    errorBox.textContent = '';
+    errorBox.classList.add('hidden');
+
+    try {
+        await api.patch('/api/applications/' + applicationId + '/' + action);
+        await StudyPage.reload();
+    } catch (error) {
+        showError(document.getElementById('process-error'), error);
+    }
 }
