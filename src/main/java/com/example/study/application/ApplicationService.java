@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import static com.example.study.application.ApplicationStatus.PENDING;
+import static com.example.study.common.ErrorCode.SELF_APPLICATION;
+
 /**
  * 신청 업무 계층.
  *
@@ -57,7 +60,37 @@ public class ApplicationService {
      *             마감 400 STUDY_CLOSED · 마감일 경과 400 DEADLINE_PASSED
      *             중복 400 DUPLICATE_APPLICATION
      */
-        throw new UnsupportedOperationException("TODO 31");
+        //대상 확인
+        StudyPost post = studyService.getWithWriter(studyPostId);
+
+        //자기 모집글
+        if(post.isWrittenBy(memberId)){
+            throw new BusinessException(ErrorCode.SELF_APPLICATION);
+        }
+
+        //상태
+        if(!post.isRecruiting()){
+            throw new BusinessException(ErrorCode.STUDY_CLOSED);
+        }
+
+        //마감일
+        if(post.isDeadlinePassed()){
+            throw new BusinessException(ErrorCode.DEADLINE_PASSED);
+        }
+
+        //중복
+        if(applicationRepository.existsByStudyPostIdAndApplicantIdAndStatusIn(post.getId(), memberId, List.of(ApplicationStatus.PENDING))){
+            throw new BusinessException(ErrorCode.DUPLICATE_APPLICATION);
+        }
+
+        //신청자
+        Member applicant = memberService.getMember(memberId);
+
+        Application application = new Application(post, applicant, message);
+
+        Application saved = applicationRepository.save(application);
+        return ApplicationResponse.from(saved);
+
     }
 
     /**
@@ -80,7 +113,17 @@ public class ApplicationService {
      * 반환형태    없음
      * 동작결과    EP-08 · 204 · 남의 신청 403 · 처리된 건 400 ALREADY_PROCESSED
      */
-        throw new UnsupportedOperationException("TODO 32");
+        Application application = getWithStudyPost(applicationId);
+
+        if(!application.isAppliedBy(memberId)){
+            throw new BusinessException(ErrorCode.FORBIDDEN);
+        }
+
+        if(!application.isPending()){
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED);
+        }
+
+        applicationRepository.delete(application);
     }
 
     public List<ApplicationResponse> findByStudy(Long studyPostId, Long memberId) {
