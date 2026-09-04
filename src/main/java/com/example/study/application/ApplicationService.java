@@ -194,17 +194,19 @@ public class ApplicationService {
      *             마지막 자리를 채우면 모집글 상태가 CLOSED
      */
         Application application = processable(applicationId, memberId);
-        long count = applicationRepository.countByStudyPostIdAndStatus(application.getStudyPost().getId(),ApplicationStatus.PENDING);
+        StudyPost studyPost = application.getStudyPost();
+        long acceptedCount = applicationRepository.countByStudyPostIdAndStatus(
+                studyPost.getId(), ApplicationStatus.ACCEPTED);
 
-        if (count <= 0) {
+        if (acceptedCount >= studyPost.getCapacity()) {
             throw new BusinessException(ErrorCode.CAPACITY_EXCEEDED, "정원 초과");
         }
 
-        if (count == 1) {
-            application.getStudyPost().close();
-        }
-
         application.accept();
+
+        if (acceptedCount + 1 == studyPost.getCapacity()) {
+            studyPost.close();
+        }
 
         return ApplicationResponse.from(application);
 
@@ -246,12 +248,12 @@ public class ApplicationService {
      */
         Application application = getWithStudyPost(applicationId);
 
-        if (application.getStudyPost().isWrittenBy(memberId)) {
-            throw new BusinessException(ErrorCode.SELF_APPLICATION, "자기 모집글");
+        if (!application.getStudyPost().isWrittenBy(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "권한 부재");
         }
 
         if (!application.isPending()) {
-            throw new BusinessException(ErrorCode.STUDY_CLOSED, "마감된 모집글");
+            throw new BusinessException(ErrorCode.ALREADY_PROCESSED, "이미 처리된 신청");
         }
 
         return application;
