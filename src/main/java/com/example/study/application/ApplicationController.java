@@ -2,17 +2,14 @@ package com.example.study.application;
 
 import com.example.study.application.dto.ApplicationRequest;
 import com.example.study.application.dto.ApplicationResponse;
+import com.example.study.study.StudyPost;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.apache.catalina.connector.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -39,6 +36,19 @@ public class ApplicationController {
      * 반환형태    ApplicationResponse · 취소는 없음
      * 동작결과    EP-07 · EP-08
      */
+    @PostMapping("/api/studies/{studyId}/applications")
+    public ResponseEntity<ApplicationResponse> apply(@PathVariable Long studyId, @RequestBody String message, @AuthenticationPrincipal Long memberId){
+        ApplicationResponse response = applicationService.apply(studyId, message, memberId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+
+    @DeleteMapping("/api/applications/{id}")
+    public ResponseEntity<Void> cancel(@PathVariable Long id, @AuthenticationPrincipal Long memberId){
+        applicationService.cancel(id, memberId);
+        return ResponseEntity.noContent().build();
+
+    }
 
     /*
      * TODO 46 · 신청 처리 주소 셋
