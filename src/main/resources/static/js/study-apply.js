@@ -23,6 +23,40 @@ StudyPage.register(async function renderApply() {
      * 동작결과    로그아웃 상태에서 구획이 보이지 않음
      *             자기 글이면 400 SELF_APPLICATION 이 아니라 구획 자체가 없음
      */
+    //
+    const panel = document.querySelector("#apply-panel");
+
+    const application = StudyPage.myApplication;
+    const hasApplication = application != null && application.status !== 'REJECTED';
+
+    if (!hasApplication) {
+            if (!auth.loggedIn || StudyPage.isOwner() || StudyPage.study.status !== 'RECRUITING') {
+                panel.innerHTML = '';
+                return;
+        }
+
+        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
+            '<div class="field"><textarea placeholder="신청 메시지"></textarea></div>\n' +
+            '<div class="error hidden"></div>\n' +
+            '<div class="actions"><button class="primary">신청하기</button></div>';
+        panel.classList.remove('hidden');
+        const messageInput = panel.querySelector('textarea');
+        const errorBox = panel.querySelector('.error');
+        const applyButton = panel.querySelector('.actions .primary');
+
+        applyButton.addEventListener('click', async () => {
+            try {
+                await api.post(`/api/studies/${StudyPage.study.id}/applications`, {
+                    message: messageInput.value
+                });
+                StudyPage.reload();
+            } catch (error) {
+                showError(errorBox, error);
+            }
+        });
+        return;
+    }
+
 
     /*
      * TODO 35 · 신청 후 화면
@@ -39,4 +73,24 @@ StudyPage.register(async function renderApply() {
      *             조각은 parts.html 의 "신청 후 · 대기" 와 "신청 후 · 수락됨"
      * 동작결과    대기 건은 취소 단추가 보이고 수락된 건은 보이지 않음
      */
+
+    if (application.status === 'PENDING') {
+        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
+            '<div class="item">\n' +
+            '<div class="item-meta">\n' +
+            '<span class="badge badge-PENDING">대기</span>\n' +
+            '<span>09-03에 신청함</span>\n' +
+            '</div>\n' + '<button>신청 취소</button>\n' + '</div>'
+        panel.classList.remove('hidden')
+
+    } else if (application.status === 'ACCEPTED') {
+        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
+            '<div class="item">\n' +
+            '<div class="item-meta">\n' +
+            '<span class="badge badge-ACCEPTED">수락됨</span>\n' +
+            '<span>09-03에 신청함</span>\n' +
+            '</div>\n' +
+            '</div>'
+        panel.classList.remove('hidden')
+    }
 });
