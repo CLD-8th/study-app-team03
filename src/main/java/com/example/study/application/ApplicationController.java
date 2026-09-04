@@ -62,4 +62,19 @@ public class ApplicationController {
      * 반환형태    List<ApplicationResponse> · ApplicationResponse
      * 동작결과    EP-09 · EP-10 · EP-11
      */
+    @GetMapping("/api/studies/{studyId}/applications")
+    public List<ApplicationResponse> findAllByStudyId(@PathVariable Long studyId,
+                                                      @AuthenticationPrincipal Long memberId
+    ) {
+        return applicationService.findByStudy(studyId, memberId);
+    }
+    @PatchMapping("/api/applications/{id}/accept")
+    public ApplicationResponse accept(@PathVariable Long id, @AuthenticationPrincipal Long memberId ) {
+        return applicationService.accept(id,memberId);
+    }
+    @PatchMapping("/api/applications/{id}/reject")
+    public ApplicationResponse reject(@PathVariable Long id, @AuthenticationPrincipal Long memberId ) {
+        return applicationService.reject(id,memberId);
+    }
+
 }
