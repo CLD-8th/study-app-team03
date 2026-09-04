@@ -27,6 +27,21 @@ async function initForm() {
      * 그릴위치    SC-03 · #page-title · #title · #content · #capacity · #deadline
      * 동작결과    수정으로 들어가면 기존 값이 채워져 있음
      */
+    if (!requireLogin()) {
+        return;
+    }
+
+    if (formId) {
+        document.getElementById('page-title').textContent = '모집글 수정';
+
+        const data = await api.get('/api/studies/' + formId);
+        document.getElementById('title').value = data.title;
+        document.getElementById('content').value = data.content;
+        document.getElementById('capacity').value = data.capacity;
+        document.getElementById('deadline').value = data.deadline;
+    } else {
+        document.getElementById('deadline').value = defaultDeadline();
+    }
 }
 
 async function saveForm() {
@@ -45,6 +60,23 @@ async function saveForm() {
      *             조각은 parts.html 의 "입력란 · 검증 실패"
      * 동작결과    빈 제목으로 저장하면 제목 아래에 사유가 표시됨
      */
+    const body = {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        capacity: Number(document.getElementById('capacity').value),
+        deadline: document.getElementById('deadline').value
+    };
+
+    try {
+        const data = formId
+            ? await api.put('/api/studies/' + formId, body)
+            : await api.post('/api/studies', body);
+        location.href = '/study.html?id=' + data.id;
+    } catch (e) {
+        if (!showFieldErrors(e, '')) {
+            showError(document.getElementById('save-error'), e);
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
