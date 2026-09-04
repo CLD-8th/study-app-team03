@@ -21,6 +21,29 @@ function renderList(data) {
      *             조각은 parts.html 의 "목록 항목"
      * 동작결과    제목을 누르면 /study.html?id= 로 이동
      */
+    document.getElementById('total').textContent = data.totalElements +'건';
+    const listEl = document.getElementById('list');
+    if (data.content.length === 0) {
+        listEl. innerHTML = '<div class="empty">등록된 모집글이 없습니다</div>';
+        document.getElementById('pager').innerHTML ='';
+        return;
+    }
+    listEl.innerHTML = data.content.map(post => `
+        <div class="item ${post.status === 'CLOSED' ? 'closed' : ''}">
+            <div>
+                <div class="item-title"><a href="/study.html?id=${post.id}">${escapeHtml(post.title)}</a></div>
+                <div class="item-meta">
+                    <span>${escapeHtml(post.writerNickname)}</span>
+                    <span>${post.acceptedCount} / ${post.capacity}명</span>
+                </div>
+            </div>
+            <div class="item-meta">
+                ${badge(post.status)}
+                <span>~ ${shortDate(post.deadline)}</span>
+            </div>
+        </div>
+    `).join('');
+    renderPager(data);
 }
 
 function renderPager(data) {
@@ -36,6 +59,23 @@ function renderPager(data) {
      *             조각은 parts.html 의 "쪽 이동"
      * 동작결과    쪽 단추를 누르면 그 쪽이 조회됨
      */
+    const pagerEl =document.getElementById('pager');
+    pagerEl.innerHTML = '';
+
+    for (let i = 0; i < data.totalPages; i++) {
+        const button = document.createElement('button');
+        button.textContent = i + 1;
+
+        if (i === data.page) {
+            button.classList.add('current');
+        }
+
+        button.addEventListener('click', () => {
+            listPage = i;
+            loadList();
+        });
+        pagerEl.appendChild(button);
+    }
 }
 
 async function loadList() {
@@ -53,6 +93,29 @@ async function loadList() {
      *             조각은 parts.html 의 "실패 안내 · 다시 시도 포함"
      * 동작결과    검색어를 넣으면 제목에 포함된 것만 나옴
      */
+    const params = new URLSearchParams();
+    params.set('page', listPage);
+
+    const keyword = document.getElementById('keyword').value.trim();
+    if (keyword) {
+        params.set('keyword', keyword);
+    }
+
+    const status = document.getElementById('status').value;
+    if (status) {
+        params.set('status', status);
+    }
+    try {
+        const data = await api.get('/api/studies?' + params.toString());
+
+        document.getElementById('load-error').classList.add('hidden');
+        renderList(data);
+
+    } catch (e) {
+        document.getElementById('load-error').classList.remove('hidden');
+        document.getElementById('list').innerHTML = '';
+        document.getElementById('pager').innerHTML = '';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
