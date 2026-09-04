@@ -89,7 +89,8 @@ public class StudyController {
             @Valid @RequestBody StudyRequest request,
             @AuthenticationPrincipal Long memberId) {
         return studyService.update(
-                id, request.title(), request.content(), request.capacity(), request.deadline(), memberId);
+                id, request.title(), request.content(), request.capacity(), request.deadline(), memberId
+        );
     }
 
     @DeleteMapping("/{id}")
