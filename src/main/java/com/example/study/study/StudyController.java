@@ -6,7 +6,9 @@ import com.example.study.study.dto.StudyListResponse;
 import com.example.study.study.dto.StudyRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.function.Function;
 
 /**
  * 모집글 표현 계층.
@@ -50,6 +53,17 @@ public class StudyController {
      * 반환형태    PageResponse<StudyListResponse> · TODO.md 응답 형태 참고
      * 동작결과    EP-01 · GET /api/studies?page=0&size=10 이 쪽 형태로 응답
      */
+    @GetMapping
+    public PageResponse<StudyListResponse> findAll(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) StudyStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<StudyListResponse> result =studyService.findAll(keyword, status, pageable);
+        return PageResponse.of(result, Function.identity());
+    }
+
 
     /*
      * TODO 26 · 모집글 주소 다섯
