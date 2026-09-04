@@ -73,7 +73,12 @@ public class StudyService {
      * 반환형태    Page<StudyListResponse>
      * 동작결과    EP-01 · 목록이 열 건이어도 조회 구문은 둘
      */
-        throw new UnsupportedOperationException("TODO 11");
+        Page<StudyPost> posts = studyPostRepository.search(keyword, status, pageable);
+        List<Long> ids = posts.getContent().stream()
+                .map(StudyPost::getId)
+                .toList();
+        Map<Long, Long> counts = acceptedCounts(ids);
+        return posts.map(post -> StudyListResponse.of(post, counts.getOrDefault(post.getId(),0L)));
     }
 
     public StudyDetailResponse findById(Long id) {
