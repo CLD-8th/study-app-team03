@@ -38,6 +38,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * 반환형태    List<Application>
      * 동작결과    마이페이지에서 내 신청이 최신순으로 나옴
      */
+    List<Application> findApplicationByApplicant(Long id);
 
     // 제공 · 담당 3 과 담당 4 가 함께 씀.
     @EntityGraph(attributePaths = {"studyPost", "applicant"})

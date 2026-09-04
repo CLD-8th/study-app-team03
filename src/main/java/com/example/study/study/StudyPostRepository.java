@@ -39,4 +39,5 @@ public interface StudyPostRepository extends JpaRepository<StudyPost, Long> {
      * 반환형태    List<StudyPost>
      * 동작결과    마이페이지에서 내 모집글이 최신순으로 나옴
      */
+    List<StudyPost> findByWriterId(Long id);
 }
