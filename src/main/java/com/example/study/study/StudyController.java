@@ -81,4 +81,44 @@ public class StudyController {
      * 반환형태    StudyDetailResponse · 삭제만 없음
      * 동작결과    EP-02 ~ EP-06 · 마감은 PATCH /api/studies/{id}/close
      */
+    @GetMapping("/{id}")
+    public StudyDetailResponse findById(@PathVariable Long id) {
+        return studyService.findById(id);
+    }
+
+    @PostMapping
+    public ResponseEntity<StudyDetailResponse> create(
+            @Valid @RequestBody StudyRequest request,
+            @AuthenticationPrincipal Long memberId) {
+        StudyDetailResponse response = studyService.create(
+                request.title(), request.content(), request.capacity(), request.deadline(), memberId);
+
+        return ResponseEntity.created(URI.create("/api/studies/" + response.id()))
+                .body(response);
+    }
+
+    @PutMapping("/{id}")
+    public StudyDetailResponse update(
+            @PathVariable Long id,
+            @Valid @RequestBody StudyRequest request,
+            @AuthenticationPrincipal Long memberId) {
+        return studyService.update(
+                id, request.title(), request.content(), request.capacity(), request.deadline(), memberId
+        );
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long memberId) {
+        studyService.delete(id, memberId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{id}/close")
+    public StudyDetailResponse close(
+            @PathVariable Long id,
+            @AuthenticationPrincipal Long memberId) {
+        return studyService.close(id, memberId);
+    }
 }
