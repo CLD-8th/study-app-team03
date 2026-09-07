@@ -24,38 +24,58 @@ StudyPage.register(async function renderApply() {
      *             자기 글이면 400 SELF_APPLICATION 이 아니라 구획 자체가 없음
      */
     //
-    const panel = document.querySelector("#apply-panel");
-
-    const application = StudyPage.myApplication;
-    const hasApplication = application != null && application.status !== 'REJECTED';
+    const study = StudyPage.study;
+    const panel = document.getElementById('apply-panel');
+    const mine = StudyPage.myApplication;
+    const hasApplication = mine != null && mine.status !== 'REJECTED';
 
     if (!hasApplication) {
-            if (!auth.loggedIn || StudyPage.isOwner() || StudyPage.study.status !== 'RECRUITING') {
-                panel.innerHTML = '';
-                return;
+        if (!auth.loggedIn || StudyPage.isOwner() || study.status !== 'RECRUITING') {
+            panel.classList.add('hidden');
+            return;
         }
-
-        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
-            '<div class="field"><textarea placeholder="신청 메시지"></textarea></div>\n' +
-            '<div class="error hidden"></div>\n' +
-            '<div class="actions"><button class="primary">신청하기</button></div>';
         panel.classList.remove('hidden');
-        const messageInput = panel.querySelector('textarea');
-        const errorBox = panel.querySelector('.error');
-        const applyButton = panel.querySelector('.actions .primary');
+        panel.innerHTML =
+            '<div class="card-head"><div class="card-title">신청</div></div>' +
+            '<div class="field"><textarea id="message" placeholder="신청 메시지"></textarea></div>' +
+            '<div class="alert alert-error hidden" id="apply-error"></div>' +
+            '<div class="actions"><button class="primary" id="apply">신청하기</button></div>';
 
-        applyButton.addEventListener('click', async () => {
+        document.getElementById('apply').addEventListener('click', async () => {
             try {
-                await api.post(`/api/studies/${StudyPage.study.id}/applications`, {
-                    message: messageInput.value
-                });
-                StudyPage.reload();
+                await api.post('/api/studies/' + StudyPage.id + '/applications',
+                    { message: document.getElementById('message').value.trim() });
+                await StudyPage.reload();
             } catch (error) {
-                showError(errorBox, error);
+                showError(document.getElementById('apply-error'), error);
             }
         });
         return;
     }
+
+    panel.classList.remove('hidden');
+    const cancelable = mine.status === 'PENDING';
+    panel.innerHTML =
+        '<div class="card-head"><div class="card-title">신청</div></div>' +
+        '<div class="item">' +
+        '  <div class="item-meta">' + badge(mine.status) +
+        '    <span>' + shortDate(mine.createdAt) + '에 신청함</span></div>' +
+        (cancelable ? '<button id="cancel-apply">신청 취소</button>' : '') +
+        '</div>' +
+        '<div class="alert alert-error hidden" id="apply-error"></div>';
+
+    if (cancelable) {
+        document.getElementById('cancel-apply').addEventListener('click', async () => {
+            if (!confirm('신청을 취소하시겠습니까?')) return;
+            try {
+                await api.del('/api/applications/' + mine.id);
+                await StudyPage.reload();
+            } catch (error) {
+                showError(document.getElementById('apply-error'), error);
+            }
+        });
+    }
+});
 
 
     /*
@@ -73,24 +93,3 @@ StudyPage.register(async function renderApply() {
      *             조각은 parts.html 의 "신청 후 · 대기" 와 "신청 후 · 수락됨"
      * 동작결과    대기 건은 취소 단추가 보이고 수락된 건은 보이지 않음
      */
-
-    if (application.status === 'PENDING') {
-        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
-            '<div class="item">\n' +
-            '<div class="item-meta">\n' +
-            '<span class="badge badge-PENDING">대기</span>\n' +
-            '<span>09-03에 신청함</span>\n' +
-            '</div>\n' + '<button>신청 취소</button>\n' + '</div>'
-        panel.classList.remove('hidden')
-
-    } else if (application.status === 'ACCEPTED') {
-        panel.innerHTML = '<div class="card-head"><div class="card-title">신청</div></div>\n' +
-            '<div class="item">\n' +
-            '<div class="item-meta">\n' +
-            '<span class="badge badge-ACCEPTED">수락됨</span>\n' +
-            '<span>09-03에 신청함</span>\n' +
-            '</div>\n' +
-            '</div>'
-        panel.classList.remove('hidden')
-    }
-});

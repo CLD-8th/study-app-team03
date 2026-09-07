@@ -37,9 +37,11 @@ public class ApplicationController {
      * 동작결과    EP-07 · EP-08
      */
     @PostMapping("/api/studies/{studyId}/applications")
-    public ResponseEntity<ApplicationResponse> apply(@PathVariable Long studyId, @RequestBody String message, @AuthenticationPrincipal Long memberId){
-        ApplicationResponse response = applicationService.apply(studyId, message, memberId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    public ResponseEntity<ApplicationResponse> apply(@PathVariable Long studyId,
+                                                     @Valid @RequestBody ApplicationRequest request,
+                                                     @AuthenticationPrincipal Long memberId) {
+        return ResponseEntity.status(201)
+                .body(applicationService.apply(studyId, request.message(), memberId));
     }
 
 
