@@ -65,27 +65,26 @@ public class ApplicationService {
 
         //자기 모집글
         if(post.isWrittenBy(memberId)){
-            throw new BusinessException(ErrorCode.SELF_APPLICATION);
+            throw new BusinessException(ErrorCode.SELF_APPLICATION, "자기 모집글에는 신청 불가");
         }
 
         //상태
         if(!post.isRecruiting()){
-            throw new BusinessException(ErrorCode.STUDY_CLOSED);
+            throw new BusinessException(ErrorCode.STUDY_CLOSED, "마감된 모집글");
         }
 
         //마감일
         if(post.isDeadlinePassed()){
-            throw new BusinessException(ErrorCode.DEADLINE_PASSED);
+            throw new BusinessException(ErrorCode.DEADLINE_PASSED, "마감일이 지남");
         }
 
         //중복
         if(applicationRepository.existsByStudyPostIdAndApplicantIdAndStatusIn(post.getId(), memberId, List.of(ApplicationStatus.PENDING))){
-            throw new BusinessException(ErrorCode.DUPLICATE_APPLICATION);
+            throw new BusinessException(ErrorCode.DUPLICATE_APPLICATION, "이미 신청한 모집글");
         }
 
         //신청자
         Member applicant = memberService.getMember(memberId);
-
         Application application = new Application(post, applicant, message);
 
         Application saved = applicationRepository.save(application);
